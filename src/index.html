@@ -1,0 +1,47 @@
+<!-- background: public/assets/background.jpg -->
+<div id="background"></div>
+
+<!-- wrapper: ExuraCSS layout attributes -->
+<div id="wrapper" flex="d:column j:between a:middle">
+
+  <!-- navbar: the Vercel mark on the right -->
+  <nav size="w:full p:2" flex="j:end a:middle">
+    <a class="vercel" href="https://vercel.com" target="_blank" flex="a:middle">
+      <img src="https://assets.vercel.com/image/upload/v1588805858/repositories/vercel/logo.png" alt="" onerror="this.remove()">
+      <span>Vercel</span>
+    </a>
+  </nav>
+
+  <!-- header -->
+  <!-- style: the hero only fades, a transform would pin the fixed API test to the hero -->
+  <main id="hero" flex="d:column j:center a:middle" text="center" size="p:2" style="transform: none">
+    <small class="series">CSS · JAVASCRIPT · PHP · VERCEL</small>
+    <h1>FORGED</h1>
+    <p class="tagline">Forged through Rune. Shaped with Exura. Shipped on Vercel.</p>
+
+    <!-- ExuraJS module: rendered from ExuraPHP on Vercel (GET /api/rune) -->
+    <!-- one module, two places: the API test is fixed on the top left, the message stays here -->
+    <exura-rune>
+      <aside id="api" misc="p:fixed z:3" flex="d:column a:start g:1">
+        <button button="none" class="explore" onclick="rune.test()">Test API ↻</button>
+        <code class="status">GET /api/rune · {{status}}</code>
+      </aside>
+      <p class="whisper">{{message}}</p>
+    </exura-rune>
+
+    <div flex="j:center g:2" size="mt:4">
+      <a button="light" href="https://github.com/devneet-id/rune" target="_blank">
+        Explore Rune ↗
+      </a>
+      <a button="none" class="explore" href="https://github.com/devneet-id/exura" target="_blank">
+        Discover Exura ↗
+      </a>
+    </div>
+  </main>
+
+  <!-- footer -->
+  <footer size="p:2">
+    Built to create. Designed to evolve. · DEVNEET © <span id="year"></span>
+  </footer>
+
+</div>

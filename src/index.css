@@ -1,0 +1,123 @@
+/* only what Exura does not give: the background, the title, the motion */
+
+/* background: the image from public/assets, a dark veil on top */
+#background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(13, 13, 16, 0.55), rgba(13, 13, 16, 0.85)),
+    url('assets/background.jpg') center / cover no-repeat,
+    radial-gradient(circle at 50% 40%, #2a2733, #0d0d10 70%);
+}
+
+/* body[dark] colors the text, the page stays transparent over the background */
+body[dark] {
+  background-color: transparent;
+}
+
+#wrapper {
+  min-height: 100vh;
+}
+
+/* navbar: the Vercel mark, official asset from vercel.com */
+.vercel {
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.vercel:hover {
+  opacity: 1;
+}
+
+.vercel img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+/* header */
+#hero {
+  flex: 1;
+  gap: 1.25rem;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+#hero.awake {
+  opacity: 1;
+  transform: none;
+}
+
+.series {
+  letter-spacing: 0.3em;
+  opacity: 0.7;
+}
+
+h1 {
+  font-size: clamp(3.5rem, 14vw, 9rem);
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  margin-right: -0.35em; /* keep the spaced word centered */
+  line-height: 1;
+}
+
+.tagline {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
+.whisper {
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+/* the API test: fixed on the top left, its output stays below the button */
+#api {
+  top: 1rem;
+  left: 1rem;
+  width: min(360px, calc(100vw - 2rem));
+}
+
+#api exura-rune {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+#api .explore {
+  font-size: 0.85rem;
+}
+
+.status {
+  color: inherit;
+  background: none;
+  padding: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+#api .whisper {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+/* button="none" keeps it transparent, give it the padding of a button back */
+.explore {
+  padding: var(--size-pm-1) var(--size-pm-2);
+  border: 1px solid rgba(244, 241, 234, 0.6);
+  color: inherit;
+}
+
+/* footer */
+footer {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
