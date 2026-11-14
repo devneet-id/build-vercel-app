@@ -4848,7 +4848,7 @@ table tbody tr:hover {
 }
 /* only what Exura does not give: the background, the title, the motion */
 
-/* background: the image from public/assets, a dark veil on top */
+/* background: the image from dist/assets, a dark veil on top */
 #background {
   position: fixed;
   inset: 0;
@@ -4972,7 +4972,7 @@ footer {
   </style>
 </head>
 <body>
-  <!-- background: public/assets/background.jpg -->
+  <!-- background: dist/assets/background.jpg -->
 <div id="background"></div>
 
 <!-- wrapper: ExuraCSS layout attributes -->
@@ -5404,7 +5404,7 @@ Exura.module(function rune() {
 
 rune();
 
-// public/index.html is static: the year comes from the browser
+// dist/index.html is static: the year comes from the browser
 Exura.dom('#year').text(new Date().getFullYear());
 
 // wake the header

@@ -1,15 +1,16 @@
 #!/usr/bin/env php
 <?php
-/**
- * Act. 0 - The Awakening of Void
- * THE AWAKENING ✦
- * 
- * From the silence of nothingness, echoes rise from the void.
- * A journey begins — with runes at your side.
- * 
+/*
+ * Act. 1 - First Resonance
+ * VERCEL
+ *
+ * Speak to the Vercel CLI from a runite: install it, link this project,
+ * publish it, and keep its environment variables.
+ *
  * Run this script using:
  *   $ php vercel
- *   $ php vercel grimoire
+ *   $ php vercel init
+ *   $ php vercel info
  */
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -17,13 +18,13 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 /**
  * I N V O C A T I O N
- * 
- * Step 1 — Summon the runes:  
+ *
+ * Step 1 — Summon the runes:
  * Import each module's manifest.
- * 
- * Step 2 — Channel the energy:  
+ *
+ * Step 2 — Channel the energy:
  * Initialize ether, essence, and entity.
- * 
+ *
  * Note: Keep #sentinel markers if you're using Sentinel support.
  */
 use Rune\Aether\Manifest as Aether;
@@ -31,8 +32,8 @@ use Rune\Whisper\Manifest as Whisper;
 use Rune\Weaver\Manifest as Weaver;
 use Rune\Chanter\Manifest as Chanter;
 use Rune\Forger\Manifest as Forger;
+use Rune\Cipher\Manifest as Cipher;
 use Rune\Keeper\Manifest as Keeper;
-use Rune\Specter\Manifest as Specter;
 #sentinel-manifest
 
 Aether::ether()::essence()::entity();
@@ -40,55 +41,438 @@ Whisper::ether()::essence()::entity();
 Weaver::ether()::essence()::entity();
 Chanter::ether()::essence()::entity();
 Forger::ether()::essence()::entity();
+Cipher::ether()::essence()::entity();
 Keeper::ether()::essence()::entity();
-Specter::ether()::essence()::entity();
 #sentinel-awaken
 
 
 
 /**
+ * V E R C E L
+ *
+ * The helpers of this runite. Every command runs in this terminal,
+ * so the questions of the Vercel CLI (login, link) are answered here.
+ */
+const VERCEL_TARGET = 'production';          // the environment of env:* when --target is left out
+const VERCEL_CODE = 'src/vercel.php';        // the integration file made by 'php vercel code'
+
+// a spell with a value, or its default (a spell without a value is '1')
+function vercel_spell( String $key, String $default = '' ) {
+  $value = Chanter::spell($key);
+  return ($value === false || $value === '' || $value === '1') ? $default : trim((string) $value);
+}
+
+// one line of output: ok, warn, fail or info
+function vercel_line( String $state, String $text ) {
+  $color = ['ok'=> 'success', 'warn'=> 'warning', 'fail'=> 'danger', 'info'=> 'secondary'][$state];
+  $icon = ['ok'=> 'success', 'warn'=> 'warning', 'fail'=> 'danger', 'info'=> 'info'][$state];
+  Whisper::echo("{{color-$color}}{{icon-$icon}}{{color-end}} $text{{nl}}");
+}
+
+// the Vercel CLI: local (node_modules/.bin) first, then global; false when missing
+function vercel_bin() {
+  $local = __DIR__ . '/node_modules/.bin/vercel' . (PHP_OS_FAMILY === 'Windows' ? '.cmd' : '');
+  if (is_file($local)) {
+    return ['local', escapeshellarg($local)];
+  }
+  exec('vercel --version 2>&1', $out, $code);
+  return $code === 0 ? ['global', 'vercel'] : false;
+}
+
+// the CLI or a hint to run init
+function vercel_need() {
+  $bin = vercel_bin();
+  if (!$bin) vercel_line('fail', 'Vercel CLI not found, run: php vercel init');
+  return $bin ? $bin[1] : false;
+}
+
+// run in this terminal (questions are answered here); $input is sent to stdin
+function vercel_run( String $args, ?String $input = null ) {
+  $bin = vercel_need();
+  if (!$bin) return 1;
+  if ($input === null) {
+    passthru("$bin $args", $code);
+    return $code;
+  }
+  $process = proc_open("$bin $args", [0=> ['pipe', 'r'], 1=> STDOUT, 2=> STDERR], $pipes);
+  if (!is_resource($process)) return 1;
+  fwrite($pipes[0], $input);
+  fclose($pipes[0]);
+  return proc_close($process);
+}
+
+// run quietly and read the answer
+function vercel_read( String $args ) {
+  $bin = vercel_need();
+  return $bin ? (string) shell_exec("$bin $args 2>&1") : '';
+}
+
+// run beside the flow and keep the flash moving until it ends: [exit code, output]
+// (a blocking call would freeze the bar; the output goes to a file, pipes can block on Windows)
+function vercel_wait( String $command, Callable $animation ) {
+  $file = tempnam(sys_get_temp_dir(), 'vercel');
+  $process = proc_open("$command > " . escapeshellarg($file) . ' 2>&1', [], $pipes);
+  if (!is_resource($process)) return [1, ''];
+  do {
+    $animation();
+    usleep(60000);
+    $status = proc_get_status($process);
+  } while ($status['running']);
+  proc_close($process);
+  $output = (string) file_get_contents($file);
+  unlink($file);
+  return [$status['exitcode'], $output];
+}
+
+// is this folder linked to a Vercel project?
+function vercel_project() {
+  $file = __DIR__ . '/.vercel/project.json';
+  // file_get_contents, not Forger: Forger would keep it as a shard of the relic
+  return is_file($file) ? json_decode((string) file_get_contents($file)) : null;
+}
+
+// the target environment: production, preview or development
+function vercel_target() {
+  $target = vercel_spell('target', VERCEL_TARGET);
+  if (!in_array($target, ['production', 'preview', 'development'])) {
+    vercel_line('fail', "'$target' is not a target: --target=production|preview|development");
+    return false;
+  }
+  return $target;
+}
+
+// the key of an environment variable, from --key or asked
+function vercel_key() {
+  $key = vercel_spell('key') ?: trim((string) Whisper::call('Key: '));
+  if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $key)) {
+    vercel_line('fail', "'$key' is not a key, e.g. --key=DATABASE_URL");
+    return false;
+  }
+  return $key;
+}
+
+// does the key exist in the target? (reads 'vercel env list --environment <target> --json')
+function vercel_env_has( String $key, String $target ) {
+  $out = vercel_read("env list --environment $target --json");
+  $json = json_decode(substr($out, (int) strpos($out, '{')), true);
+  if (!is_array($json)) {
+    return (bool) preg_match('/^\s*' . preg_quote($key, '/') . '\s/m', $out);
+  }
+  $found = false;
+  array_walk_recursive($json, function($value, $field) use ($key, &$found) {
+    if ($field === 'key' && $value === $key) $found = true;
+  });
+  return $found;
+}
+
+// the runite can only speak to a linked project
+function vercel_linked() {
+  if (vercel_project()) return true;
+  vercel_line('fail', 'This folder is not linked to Vercel, run: php vercel link');
+  return false;
+}
+
+
+
+/**
  * I N C A N T A T I O N
- * 
- * This is your working space.  
+ *
+ * This is your working space.
  * Use begin() and end() to define the active logic scope.
  */
 Aether::begin();
 Chanter::begin();
 Keeper::begin();
 
+
+/* I · INIT
+ * find the Vercel CLI, install it globally when it is missing
+ * $ php vercel init
+ * */
 Chanter::cast(
-  arg: 'link',
-  echo: 'Login to Vercel.',
+  arg: 'init',
+  echo: 'Check or install the Vercel CLI.',
   execute: function() {
-    // specter handler
-    Specter::cast('vercel login', [
-      'exit' => true,
-      'title' => 'RUNE:: Vercel Login',
-      'blocking' => false
-    ]);
-    // alert
-    Whisper::echo("{{text-success}}{{icon-success}}{{end}} Successfully login to vercel \n");
-    Whisper::echo("{{text-info}}{{icon-info}}{{end}}{{text-secondary}} Checkout https://vercel.com \n");
+    $bin = vercel_bin();
+    if ($bin) {
+      $version = trim(vercel_read('--version'));
+      vercel_line('ok', "Vercel CLI ($bin[0]) " . (preg_match('/[\d.]+/', $version, $m) ? $m[0] : $version));
+      return;
+    }
+
+    exec('npm --version 2>&1', $out, $code);
+    if ($code !== 0) {
+      vercel_line('fail', 'npm not found, install Node.js first: https://nodejs.org');
+      return;
+    }
+
+    vercel_line('info', 'Vercel CLI not found, installing: npm install -g vercel');
+    passthru('npm install -g vercel', $code);
+    vercel_line($code === 0 && vercel_bin() ? 'ok' : 'fail', $code === 0 ? 'Vercel CLI installed' : 'Install failed, try: npm install -g vercel');
   }
 );
 
+
+/* II · CODE
+ * write src/vercel.php once: Vercel::env(), Vercel::is(), Vercel::target(), ...
+ * $ php vercel code
+ * [i]INFO: php cast build bundles it into api/index.php, before src/index.php
+ * */
 Chanter::cast(
-  arg: 'push',
-  echo: 'Publish to vercel',
+  arg: 'code',
+  echo: 'Make src/vercel.php for the API.',
   execute: function() {
-    // specter handler
-    Specter::cast('vercel --prod', [
-      'exit' => true,
-      'title' => 'RUNE:: Vercel Push',
-      'blocking' => false
-    ]);
-    // alert
-    Whisper::echo("{{text-success}}{{icon-success}}{{end}} Successfully push to vercel \n");
-    Whisper::echo("{{text-info}}{{icon-info}}{{end}}{{text-secondary}} Checkout https://vercel.com \n");
+    $file = __DIR__ . '/' . VERCEL_CODE;
+    if (is_file($file)) {
+      vercel_line('info', VERCEL_CODE . ' already exists');
+      return;
+    }
+
+    $code = <<<'PHP'
+<?php
+
+/* VERCEL
+ * the API on Vercel: environment variables and where it runs
+ * made by 'php vercel code', bundled into api/index.php by 'php cast build'
+ * */
+class Vercel {
+
+  // an environment variable (php vercel env:set), or its default
+  public static function env( String $key, $default = null ) {
+    $value = getenv($key);
+    return $value === false ? $default : $value;
+  }
+
+  // true when this request runs on Vercel
+  public static function is() {
+    return getenv('VERCEL') === '1';
+  }
+
+  // production, preview or development
+  public static function target() {
+    return getenv('VERCEL_ENV') ?: 'development';
+  }
+
+  // the url of this deployment, e.g. https://my-app-abc123.vercel.app
+  public static function url() {
+    $url = getenv('VERCEL_URL');
+    return $url ? "https://$url" : null;
+  }
+
+  // the region of this function, e.g. iad1
+  public static function region() {
+    return getenv('VERCEL_REGION') ?: null;
+  }
+
+}
+
+PHP;
+    Forger::fix(Forger::trace($file));
+    Forger::item($file, str_replace("\n", PHP_EOL, $code));
+    vercel_line('ok', VERCEL_CODE . ' made, rebuild to bundle it: php cast build');
   }
 );
+
+
+/* III · LINK
+ * link this folder to a Vercel project (logs in when needed)
+ * $ php vercel link
+ * */
+Chanter::cast(
+  arg: 'link',
+  echo: 'Link this folder to Vercel.',
+  execute: function() {
+    $project = vercel_project();
+    if ($project) {
+      vercel_line('info', 'Already linked: ' . ($project->projectName ?? $project->projectId ?? '.vercel/project.json'));
+      return;
+    }
+    $code = vercel_run('link');
+    if (vercel_project()) vercel_line('ok', 'Linked to Vercel');
+    elseif ($code !== 0) vercel_line('fail', 'Not linked');
+  }
+);
+
+
+/* IV · PUBLISH
+ * deploy to production
+ * $ php vercel publish
+ * [!]WARNING: build first, Vercel ships dist/ and api/ as they are
+ * */
+Chanter::cast(
+  arg: 'publish',
+  echo: 'Deploy to production.',
+  execute: function() {
+    if (!vercel_linked()) return;
+    $code = vercel_run('deploy --prod');
+    vercel_line($code === 0 ? 'ok' : 'fail', $code === 0 ? 'Published to production' : 'Publish failed');
+  }
+);
+
+
+/* V · ENV
+ * list the environment variables, then manage them here
+ * $ php vercel env --target=production
+ * */
+Chanter::cast(
+  arg: 'env --target',
+  echo: 'List and manage environment variables.',
+  execute: function() {
+    if (!vercel_linked()) return;
+    $target = vercel_target();
+    if (!$target) return;
+
+    while (true) {
+      vercel_run("env list --environment $target");
+      $choice = strtolower(trim((string) Whisper::call('[a]dd · [s]et · [r]emove · [q]uit: ')));
+      $cast = ['a'=> 'env:add', 's'=> 'env:set', 'r'=> 'env:remove'][$choice] ?? null;
+      if (!$cast) return;
+      Chanter::cast("$cast --target=$target")();
+    }
+  }
+);
+
+
+/* VI · ENV:ADD
+ * add a new variable; skipped when the key exists
+ * $ php vercel env:add --key=DATABASE_URL --value=postgres://... --target=production
+ * [i]INFO: --value is asked when it is left out
+ * */
+Chanter::cast(
+  arg: 'env:add --key --value --target',
+  echo: 'Add a new environment variable.',
+  execute: function() {
+    // read every spell first
+    $value = vercel_spell('value');
+    $target = vercel_target();
+    $key = vercel_key();
+    if (!$target || !$key || !vercel_linked()) return;
+
+    if (vercel_env_has($key, $target)) {
+      vercel_line('info', "$key already exists in $target, change it with: php vercel env:set --key=$key");
+      return;
+    }
+    $value = $value ?: (string) Whisper::call("Value of $key: ");
+    $code = vercel_run('env add ' . escapeshellarg($key) . " --environment $target", $value);
+    vercel_line($code === 0 ? 'ok' : 'fail', $code === 0 ? "$key added to $target" : "$key not added");
+  }
+);
+
+
+/* VII · ENV:SET
+ * make or change a variable
+ * $ php vercel env:set --key=DATABASE_URL --value=postgres://... --target=production
+ * */
+Chanter::cast(
+  arg: 'env:set --key --value --target',
+  echo: 'Make or change an environment variable.',
+  execute: function() {
+    // read every spell first
+    $value = vercel_spell('value');
+    $target = vercel_target();
+    $key = vercel_key();
+    if (!$target || !$key || !vercel_linked()) return;
+
+    $value = $value ?: (string) Whisper::call("Value of $key: ");
+
+    // --force: make it, or overwrite the value it has in this target
+    $code = vercel_run('env add ' . escapeshellarg($key) . " --environment $target --force", $value);
+    vercel_line($code === 0 ? 'ok' : 'fail', $code === 0 ? "$key set in $target" : "$key not set");
+  }
+);
+
+
+/* VIII · ENV:REMOVE
+ * remove a variable; skipped when the key is not found
+ * $ php vercel env:remove --key=DATABASE_URL --target=production
+ * */
+Chanter::cast(
+  arg: 'env:remove --key --target',
+  echo: 'Remove an environment variable.',
+  execute: function() {
+    // read every spell first
+    $target = vercel_target();
+    $key = vercel_key();
+    if (!$target || !$key || !vercel_linked()) return;
+
+    if (!vercel_env_has($key, $target)) {
+      vercel_line('info', "$key not found in $target");
+      return;
+    }
+    vercel_read('env remove ' . escapeshellarg($key) . " --environment $target --yes");
+    vercel_line(vercel_env_has($key, $target) ? 'fail' : 'ok', "$key removed from $target");
+  }
+);
+
+
+/* IX · INFO
+ * the casts of this runite, the versions, where the CLI lives, the project
+ * $ php vercel info
+ * */
+Chanter::cast(
+  arg: 'info',
+  echo: 'Casts, versions, install and project.',
+  execute: function() {
+    global $CHANTER_ECHO;
+
+    // read the CLI and the project while the flash moves (asking node takes a moment)
+    $info = Whisper::flash(function($animation, $stop, $continue) {
+      // the CLI: local first, then global; its version comes with the check
+      $local = __DIR__ . '/node_modules/.bin/vercel' . (PHP_OS_FAMILY === 'Windows' ? '.cmd' : '');
+      $bin = is_file($local) ? ['local', escapeshellarg($local)] : ['global', 'vercel'];
+      [$code, $cli] = vercel_wait("$bin[1] --version", $animation);
+      $bin = $code === 0 ? $bin : false;
+
+      // where it lives
+      $where = '';
+      if ($bin && $bin[0] === 'global') {
+        [, $where] = vercel_wait(PHP_OS_FAMILY === 'Windows' ? 'where vercel' : 'command -v vercel', $animation);
+      } elseif ($bin) {
+        $where = $local;
+      }
+
+      $animation();
+      $project = vercel_project();
+      $config = json_decode((string) @file_get_contents(__DIR__ . '/vercel.json'), true) ?: [];
+      $where = trim($where);
+      $cli = trim($cli);
+      return compact('bin', 'cli', 'where', 'project', 'config');
+    });
+    extract($info);
+
+    // casts of this runite (not the built-in ones)
+    Whisper::echo('{{nl}}{{color-primary}} # C A S T{{color-end}}{{nl}}');
+    foreach ($CHANTER_ECHO as $name => $echo) {
+      if (in_array($name, ['artefact', 'grimoire', 'reliquary', 'rune', 'sentinel'])) continue;
+      Whisper::echo("  {{color-info}}php vercel {$echo[1]}{{color-end}}{{nl}}    ≈ {$echo[2]}{{nl}}");
+    }
+
+    Whisper::echo('{{nl}}{{color-primary}} # V E R S I O N{{color-end}}{{nl}}');
+    Whisper::echo('  Vercel CLI » ' . ($bin ? (preg_match('/[\d.]+/', $cli, $m) ? $m[0] : $cli) . " ($bin[0])" : 'not found, run: php vercel init') . '{{nl}}');
+    Whisper::echo('  Location   » ' . ($where ? strtok($where, "\r\n") : '-') . '{{nl}}');
+    Whisper::echo('  Rune       » ' . aether_version() . '{{nl}}');
+    Whisper::echo('  PHP        » ' . PHP_VERSION . '{{nl}}');
+
+    // the project
+    $runtime = array_values($config['functions'] ?? [])[0]['runtime'] ?? '-';
+    Whisper::echo('{{nl}}{{color-primary}} # P R O J E C T{{color-end}}{{nl}}');
+    Whisper::echo('  Linked     » ' . ($project ? 'yes' : 'no, run: php vercel link') . '{{nl}}');
+    if ($project) {
+      Whisper::echo('  Name       » ' . ($project->projectName ?? '-') . '{{nl}}');
+      Whisper::echo('  Project ID » ' . ($project->projectId ?? '-') . '{{nl}}');
+      Whisper::echo('  Org ID     » ' . ($project->orgId ?? '-') . '{{nl}}');
+    }
+    Whisper::echo('  Runtime    » ' . $runtime . '{{nl}}');
+    Whisper::echo('  Output     » ' . ($config['outputDirectory'] ?? '-') . '{{nl}}');
+    Whisper::echo('  Code       » ' . (is_file(__DIR__ . '/' . VERCEL_CODE) ? VERCEL_CODE : 'none, run: php vercel code') . '{{nl}}');
+  }
+);
+
+
+// One runite speaks, another CLI answers,
+// the app reaches the edge.
 
 #sentinel-codex
 Chanter::end();
-Aether::end();
 Keeper::end();
+Aether::end();

@@ -1,5 +1,5 @@
 {
-  "outputDirectory": "public",
+  "outputDirectory": "dist",
   "functions": {
     "api/*.php": {
       "runtime": "vercel-php@0.5.5"
@@ -7,6 +7,6 @@
   },
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/index.php" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+    { "src": "/(.*)", "dest": "/dist/$1" }
   ]
 }

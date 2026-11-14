@@ -1,6 +1,6 @@
 /* only what Exura does not give: the background, the title, the motion */
 
-/* background: the image from public/assets, a dark veil on top */
+/* background: the image from dist/assets, a dark veil on top */
 #background {
   position: fixed;
   inset: 0;

@@ -2,14 +2,14 @@
 
 **Forged through Rune. Shaped with Exura. Shipped on Vercel.**
 
-A small web app built with Rune and the Exura series, deployed on **[Vercel](https://vercel.com)**: a static page in `public/`, an API in `api/` that runs as a Vercel PHP function. Write it in many small files in `src/`, and Rune bundles them into two.
+A small web app built with Rune and the Exura series, deployed on **[Vercel](https://vercel.com)**: a static page in `dist/`, an API in `api/` that runs as a Vercel PHP function. Write it in many small files in `src/`, and Rune bundles them into two.
 
 **[Explore Rune ↗](https://github.com/devneet-id/rune)**
 **[Explore Exura ↗](https://github.com/devneet-id/exura)**
 
-![The page on desktop](public/assets/snapshot.jpg)
+![The page on desktop](dist/assets/snapshot.jpg)
 
-<p align="center"><img src="public/assets/snapshot-mobile.jpg" alt="The page on mobile" width="260"></p>
+<p align="center"><img src="dist/assets/snapshot-mobile.jpg" alt="The page on mobile" width="260"></p>
 
 ---
 
@@ -29,7 +29,7 @@ This app holds three **runites**, all engraved from the origin runes of **[Rune]
 | Chanter | registers the casts |
 | Whisper | speaks to the user and asks |
 | Weaver | fills the templates while bundling |
-| Crafter | bundles `src/` into `public/index.html` and `api/index.php` |
+| Crafter | bundles `src/` into `dist/index.html` and `api/index.php` |
 | Forger | fetches, writes and removes files |
 | Cipher | gives every bundle its hash |
 | Keeper | remembers the shards in `.echoes` |
@@ -65,7 +65,7 @@ src/
 ├── index.css         becomes <style>
 ├── index.js          becomes <script>
 └── index.php         the API
-public/
+dist/
 ├── index.html        the page (php cast build)
 └── assets/
     ├── background.jpg
@@ -80,12 +80,12 @@ router.php            the same routes, locally (php cast serve)
 
 | Item | From | To | Holds |
 | ---- | ---- | -- | ----- |
-| `frontend` | `src/exura/*`, `src/index.*` (html, css, js) | `public/index.html` | the page, with ExuraCSS and ExuraJS inside |
+| `frontend` | `src/exura/*`, `src/index.*` (html, css, js) | `dist/index.html` | the page, with ExuraCSS and ExuraJS inside |
 | `backend` | `src/exura/exura.php`, `src/index.php` | `api/index.php` | the API, with ExuraPHP inside |
 
-* Edit only `src/`. `public/index.html` and `api/index.php` are made by `php cast build`.
-* Put images and fonts in `public/assets/`. The page reads them as `assets/...`.
-* **The background** is `public/assets/background.jpg`. Drop your own image there, no rebuild needed.
+* Edit only `src/`. `dist/index.html` and `api/index.php` are made by `php cast build`.
+* Put images and fonts in `dist/assets/`. The page reads them as `assets/...`.
+* **The background** is `dist/assets/background.jpg`. Drop your own image there, no rebuild needed.
 
 | Exura part | In this app |
 | ---------- | ----------- |
@@ -100,7 +100,7 @@ router.php            the same routes, locally (php cast serve)
 | Request | Goes to |
 | ------- | ------- |
 | `/api/*` | `api/index.php` (runtime `vercel-php`) |
-| `/*` | `public/*` |
+| `/*` | `dist/*` |
 
 Locally, `php cast serve` runs `router.php`, which reads the same `vercel.json` on every request — change the routes once, both sides follow. `router.php` and `src/` are left out of the deploy by `.vercelignore`.
 
@@ -112,7 +112,7 @@ Locally, `php cast serve` runs `router.php`, which reads the same `vercel.json` 
 
 | Cast | Description |
 | ---- | ----------- |
-| `build` | Bundle `src/` into `public/index.html` and `api/index.php`, then store. |
+| `build` | Bundle `src/` into `dist/index.html` and `api/index.php`, then store. |
 | `serve` | Serve like Vercel on `127.0.0.1:8000`. |
 | `watch` | Rebuild when `src/` changes. |
 | `start` | Build, then serve and watch. |

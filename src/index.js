@@ -32,7 +32,7 @@ Exura.module(function rune() {
 
 rune();
 
-// public/index.html is static: the year comes from the browser
+// dist/index.html is static: the year comes from the browser
 Exura.dom('#year').text(new Date().getFullYear());
 
 // wake the header
