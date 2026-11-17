@@ -2,7 +2,7 @@
 <?php
 /*
  * Act. 2 - Understanding Its Flow
- * BUILD WEBSITE EXURA
+ * BUILD WEBSITE EXURA VERCEL
  *
  * From the silence of nothingness, echoes rise from the void.
  * A journey begins — with runes at your side.
@@ -62,12 +62,15 @@ Specter::ether()::essence()::entity();
  *   src/index.css         becomes <style>
  *   src/index.js          becomes <script>
  *   src/index.php         the API
+ *   src/vessel/           the libraries, taken per folder
  * Crafter bundles them into two files, the way Vercel serves them:
  *   dist/index.html       the page (static, from the CDN)
  *   api/index.php         the API (a PHP function at /api/*)
  * Assets (images, fonts) live in dist/assets/
  *
- * Exura lives in src/exura/ and is bundled into both (php exura setup).
+ * The vessel is bundled first, into both:
+ *   exura.css, exura.js   -> dist/index.html   (php exura setup)
+ *   exura.php, vercel.php -> api/index.php     (php exura setup, php vercel code)
  */
 Aether::begin();
 Chanter::begin();
@@ -88,13 +91,16 @@ Chanter::cast(
       Crafter::seed('TYPE', 'plain');                          // plain, function or class
       Crafter::seed('LANGUAGE', ['html', 'css', 'js']); // must match a template, in this order
 
-      // Exura in src/exura/ is bundled first (php exura setup --dist=src/exura/)
-      if (is_dir(__DIR__ . '/src/exura')) {
-        Forger::scan(__DIR__ . '/src/exura', function($item) {
-          Crafter::shard($item->target);
-        });
-      }
+      // the vessel first: its html, css and js, taken per folder
+      Forger::scan(__DIR__ . '/src/vessel', function($file) {
+        // only the LANGUAGE files of the page, the rest stays out
+        if (is_file($file->target) && in_array($file->extension ?? '', ['html', 'css', 'js'])) {
+          Crafter::shard($file->target);
+        }
+        return $file;
+      });
 
+      // then the page: one shard locks one file
       Crafter::shard(__DIR__ . '/src/index.head.html');
       Crafter::shard(__DIR__ . '/src/index.html');
       Crafter::shard(__DIR__ . '/src/index.css');
@@ -107,13 +113,16 @@ Chanter::cast(
       Crafter::seed('TYPE', 'plain');
       Crafter::seed('LANGUAGE', ['php']);
 
-      Crafter::shard(__DIR__ . '/src/exura/exura.php');
+      // the vessel first: its php, taken per folder
+      // Exura::module() (php exura php), Vercel::env() ... (php vercel code)
+      Forger::scan(__DIR__ . '/src/vessel', function($file) {
+        if (is_file($file->target) && ($file->extension ?? '') === 'php') {
+          Crafter::shard($file->target);
+        }
+        return $file;
+      });
 
-      // Vercel::env(), Vercel::target(), ... (php vercel code)
-      if (is_file(__DIR__ . '/src/vercel.php')) {
-        Crafter::shard(__DIR__ . '/src/vercel.php');
-      }
-
+      // then the API
       Crafter::shard(__DIR__ . '/src/index.php');
     });
 
@@ -191,7 +200,7 @@ Chanter::cast(
   echo: 'Keep the assets as shards.',
   execute: function() {
     Keeper::shard([
-      'src',
+      'src',             // the app and its vessel
       'dist/assets',
       'exura',
       'vercel',

@@ -9,8 +9,10 @@
  *
  * Run this script using:
  *   $ php exura
- *   $ php exura setup --dist=dist/exura/ --tags=1.1.0
- *   $ php exura css --tags=1.1.0 --part=clip
+ *   $ php exura setup                              (asks where, then asks to install)
+ *   $ php exura setup --dist=src/vessel/ --tags=1.1.0 --install
+ *   $ php exura css --install --part=clip
+ *   $ php exura js --remove
  */
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -52,7 +54,7 @@ Forger::ether()::essence()::entity();
  *   EXURA_TAGS  a tag (1.1.0) or a branch (1.x = the latest of 1.x)
  *   EXURA_CDN   where the files come from
  */
-const EXURA_DIST = 'src/exura/';
+const EXURA_DIST = 'src/vessel/';
 const EXURA_TAGS = '1.1.0';
 const EXURA_CDN = 'https://cdn.jsdelivr.net/gh/devneet-id';
 
@@ -116,6 +118,30 @@ function exura_take( String $part, String $tags, String $dist, String $key = 'fi
   return true;
 }
 
+// remove one file of a part from the dist folder
+function exura_drop( String $part, String $dist, String $key = 'file' ) {
+  $file = EXURA_PARTS[$part][$key];
+  $target = __DIR__ . '/' . $dist . $file;
+  if (!is_file($target)) {
+    exura_line('info', "$dist$file is not installed");
+    return false;
+  }
+  Forger::clean($target);
+  exura_line('ok', "$dist$file removed");
+  return true;
+}
+
+// install (default) or remove one part: php exura css --install | --remove
+function exura_part( String $part, String $key = 'file' ) {
+  // read every spell first
+  $remove = Chanter::spell('remove') !== false;
+  if ($remove) {
+    return exura_drop($part, EXURA_DIST, $key);
+  }
+  $tags = exura_tags();
+  return $tags ? exura_take($part, $tags, EXURA_DIST, $key) : false;
+}
+
 // a tag or a branch: 1.1.0, v1.1.0, 1.x
 function exura_tags() {
   $tags = exura_spell('tags', EXURA_TAGS);
@@ -139,18 +165,30 @@ Chanter::begin();
 
 
 /* I · SETUP
- * write the settings into this runite, then fetch css, js and php
- * $ php exura setup --dist=dist/exura/ --tags=1.1.0
- * [i]INFO: both spells are optional, the current settings stay
+ * write the settings into this runite, then install css, js and php
+ * $ php exura setup
+ *   1. Where should Exura live?   (empty = the current EXURA_DIST)
+ *   2. Install Exura now? [y/n]
+ * $ php exura setup --dist=src/vessel/ --tags=1.1.0 --install
+ * [i]INFO: every spell answers its question; --tags keeps EXURA_TAGS when left out
+ *   dist/exura/  the page links the files (src/index.head.html)
+ *   src/vessel/  php cast build bundles them into dist/index.php
  * */
 Chanter::cast(
-  arg: 'setup --dist --tags',
-  echo: 'Set dist and tags, fetch all.',
+  arg: 'setup --dist --tags --install',
+  echo: 'Set dist and tags, then install.',
   execute: function() {
     // read every spell first
     $tags = exura_tags();
-    $dist = trim(str_replace('\\', '/', exura_spell('dist', EXURA_DIST)), '/') . '/';
+    $dist = exura_spell('dist', '');
+    $install = Chanter::spell('install') !== false;
     if (!$tags) return;
+
+    // 1. where
+    if ($dist === '') {
+      $dist = trim((string) Whisper::call('Where should Exura live? (empty = ' . EXURA_DIST . '):')) ?: EXURA_DIST;
+    }
+    $dist = trim(str_replace('\\', '/', $dist), '/') . '/';
     if (!preg_match('#^[A-Za-z0-9._/-]+$#', $dist) || str_contains($dist, '..')) {
       exura_line('fail', "'$dist' is not a folder inside this website, e.g. --dist=dist/exura/");
       return;
@@ -163,7 +201,14 @@ Chanter::cast(
     Forger::item(__FILE__, $self);
     exura_line('info', "EXURA_DIST = '$dist', EXURA_TAGS = '$tags'");
 
-    // then fetch every part with the new settings
+    // 2. install
+    if (!$install) {
+      $install = strtolower(trim((string) Whisper::call('Install Exura now? [y/n]:'))) === 'y';
+    }
+    if (!$install) {
+      exura_line('info', 'Install later: php exura css, php exura js, php exura php');
+      return;
+    }
     foreach (array_keys(EXURA_PARTS) as $part) {
       exura_take($part, $tags, $dist);
     }
@@ -172,42 +217,41 @@ Chanter::cast(
 
 
 /* II · CSS
- * $ php exura css
- * $ php exura css --tags=1.1.0 --part=clip   (exura-clip.css, the emoji icons)
+ * $ php exura css                            install exura.css
+ * $ php exura css --tags=1.1.0 --part=clip   install exura-clip.css, the emoji icons
+ * $ php exura css --remove                   remove exura.css (--part=clip for the clip)
  * */
 Chanter::cast(
-  arg: 'css --tags --part',
-  echo: 'Fetch exura.css (--part=clip).',
+  arg: 'css --install --remove --tags --part',
+  echo: 'Install or remove exura.css.',
   execute: function() {
-    $tags = exura_tags();
-    $part = Chanter::spell('part') === 'clip' ? 'clip' : 'file';
-    if ($tags) exura_take('css', $tags, EXURA_DIST, $part);
+    exura_part('css', Chanter::spell('part') === 'clip' ? 'clip' : 'file');
   }
 );
 
 
 /* III · JS
  * $ php exura js --tags=1.1.0
+ * $ php exura js --remove
  * */
 Chanter::cast(
-  arg: 'js --tags',
-  echo: 'Fetch exura.js.',
+  arg: 'js --install --remove --tags',
+  echo: 'Install or remove exura.js.',
   execute: function() {
-    $tags = exura_tags();
-    if ($tags) exura_take('js', $tags, EXURA_DIST);
+    exura_part('js');
   }
 );
 
 
 /* IV · PHP
  * $ php exura php --tags=1.1.0
+ * $ php exura php --remove
  * */
 Chanter::cast(
-  arg: 'php --tags',
-  echo: 'Fetch exura.php.',
+  arg: 'php --install --remove --tags',
+  echo: 'Install or remove exura.php.',
   execute: function() {
-    $tags = exura_tags();
-    if ($tags) exura_take('php', $tags, EXURA_DIST);
+    exura_part('php');
   }
 );
 

@@ -54,7 +54,7 @@ Keeper::ether()::essence()::entity();
  * so the questions of the Vercel CLI (login, link) are answered here.
  */
 const VERCEL_TARGET = 'production';          // the environment of env:* when --target is left out
-const VERCEL_CODE = 'src/vercel.php';        // the integration file made by 'php vercel code'
+const VERCEL_CODE = 'src/vessel/vercel.php'; // the integration file made by 'php vercel code'
 
 // a spell with a value, or its default (a spell without a value is '1')
 function vercel_spell( String $key, String $default = '' ) {
@@ -214,13 +214,13 @@ Chanter::cast(
 
 
 /* II · CODE
- * write src/vercel.php once: Vercel::env(), Vercel::is(), Vercel::target(), ...
+ * write src/vessel/vercel.php once: Vercel::env(), Vercel::is(), Vercel::target(), ...
  * $ php vercel code
  * [i]INFO: php cast build bundles it into api/index.php, before src/index.php
  * */
 Chanter::cast(
   arg: 'code',
-  echo: 'Make src/vercel.php for the API.',
+  echo: 'Make src/vessel/vercel.php for the API.',
   execute: function() {
     $file = __DIR__ . '/' . VERCEL_CODE;
     if (is_file($file)) {

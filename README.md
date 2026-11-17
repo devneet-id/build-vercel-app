@@ -1,15 +1,94 @@
-# Build Vercel App
+# Relic Web Exura Vercel
 
 **Forged through Rune. Shaped with Exura. Shipped on Vercel.**
 
 A small web app built with Rune and the Exura series, deployed on **[Vercel](https://vercel.com)**: a static page in `dist/`, an API in `api/` that runs as a Vercel PHP function. Write it in many small files in `src/`, and Rune bundles them into two.
 
+![Relic Web Exura Vercel](dist/assets/snapshot.jpg)
+
 **[Explore Rune ↗](https://github.com/devneet-id/rune)**
 **[Explore Exura ↗](https://github.com/devneet-id/exura)**
+**[Explore Reliquary ↗](https://github.com/devneet-id/reliquary)**
 
-![The page on desktop](dist/assets/snapshot.jpg)
+---
 
-<p align="center"><img src="dist/assets/snapshot-mobile.jpg" alt="The page on mobile" width="260"></p>
+## The Relics
+
+This repo holds two **relics**: runites sealed as `.rune`, listed in the **[Reliquary](https://github.com/devneet-id/reliquary)**.
+
+| Relic | `.rune` | Carries |
+| ----- | ------- | ------- |
+| `devneet-id/relic-web-exura-vercel/cast` | `cast.rune` | the whole app: the runite `cast`, with `src/` (and its vessel), `dist/assets/`, `exura`, `vercel`, `vercel.json`, `router.php`, `.gitignore`, `.vercelignore` and this README as shards |
+| `devneet-id/relic-web-exura-vercel/vercel` | `vercel.rune` | the runite `vercel` only; it speaks to the Vercel CLI |
+
+Exura is not a relic of this repo: the runite `exura` comes from **[relic-web-exura](https://github.com/devneet-id/relic-web-exura)** (`devneet-id/relic-web-exura/exura`), and is updated from there.
+
+### Get the app
+
+**From the void** — a new folder, Rune and one awakening file:
+
+```bash
+composer require devneet/rune
+```
+
+```php
+#!/usr/bin/env php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+
+Rune\Ethereal::awakening();
+```
+
+Save it as `cast`, then:
+
+```bash
+php cast
+```
+
+Answer `y`, and choose `devneet-id/relic-web-exura-vercel/cast`.
+
+**Into a runite you already have:**
+
+```bash
+php cast reliquary --relic-runite=devneet-id/relic-web-exura-vercel/cast
+```
+
+**Or clone this repo:**
+
+```bash
+git clone https://github.com/devneet-id/relic-web-exura-vercel.git
+cd relic-web-exura-vercel
+composer install
+php exura setup
+php cast start
+```
+
+Then open `http://127.0.0.1:8000` and press **Test API**.
+
+### Get Vercel only
+
+For an app of your own: save the same awakening file as `vercel`, beside your `cast`, then:
+
+```bash
+php vercel
+```
+
+Answer `y`, and choose `devneet-id/relic-web-exura-vercel/vercel`. Or, from a `vercel` runite you already have:
+
+```bash
+php vercel reliquary --relic-runite=devneet-id/relic-web-exura-vercel/vercel
+```
+
+Then `php vercel init`, and `php vercel code` for `src/vessel/vercel.php`.
+
+### Update Exura
+
+The runite `exura` follows its relic in **[relic-web-exura](https://github.com/devneet-id/relic-web-exura)**:
+
+```bash
+php exura reliquary --relic-runite=devneet-id/relic-web-exura/exura --yes
+php exura setup
+```
 
 ---
 
@@ -21,7 +100,7 @@ This app holds three **runites**, all engraved from the origin runes of **[Rune]
 | ------ | --- |
 | `cast` | builds, serves, watches and stores the app |
 | `exura` | installs and removes the Exura series from the CDN |
-| `vercel` | logs in and pushes the app to Vercel |
+| `vercel` | installs the Vercel CLI, links, publishes and keeps the environment variables |
 
 | Rune | Role in this app |
 | ---- | ---------------- |
@@ -41,17 +120,8 @@ Want to engrave your own? Start from the **[Rune repository](https://github.com/
 
 * PHP 8.1+ with `curl` (or `allow_url_fopen`)
 * Composer
-* [Vercel CLI](https://vercel.com/docs/cli) *(to deploy)*: `npm i -g vercel`
-
-### Install
-
-```bash
-composer install
-php exura setup
-php cast start
-```
-
-Then open `http://127.0.0.1:8000` and press **Test API**.
+* Rune 1.20+ *(for the reliquary)*
+* [Vercel CLI](https://vercel.com/docs/cli) *(to deploy)*: `php vercel init` installs it
 
 ---
 
@@ -59,17 +129,22 @@ Then open `http://127.0.0.1:8000` and press **Test API**.
 
 ```
 src/
-├── exura/            exura.css · exura.js · exura.php (php exura setup)
 ├── index.head.html   goes into <head>
 ├── index.html        goes into <body>
 ├── index.css         becomes <style>
 ├── index.js          becomes <script>
-└── index.php         the API
+├── index.php         the API
+└── vessel/           every library lives here, bundled first
+    ├── exura.css     php exura css
+    ├── exura.js      php exura js
+    ├── exura.php     php exura php
+    ├── vercel.php    php vercel code
+    └── README.md
 dist/
 ├── index.html        the page (php cast build)
 └── assets/
     ├── background.jpg
-    └── snapshot*.jpg   the pictures of this README
+    └── snapshot.jpg  the picture of this README
 api/
 └── index.php         the API (php cast build), a Vercel function
 vercel.json           the routes and the PHP runtime of Vercel
@@ -80,10 +155,11 @@ router.php            the same routes, locally (php cast serve)
 
 | Item | From | To | Holds |
 | ---- | ---- | -- | ----- |
-| `frontend` | `src/exura/*`, `src/index.*` (html, css, js) | `dist/index.html` | the page, with ExuraCSS and ExuraJS inside |
-| `backend` | `src/exura/exura.php`, `src/index.php` | `api/index.php` | the API, with ExuraPHP inside |
+| `frontend` | `src/vessel/*` then `src/index.*` (html, css, js) | `dist/index.html` | the page, with ExuraCSS and ExuraJS inside |
+| `backend` | `src/vessel/*.php` then `src/index.php` | `api/index.php` | the API, with ExuraPHP and `Vercel::` inside |
 
 * Edit only `src/`. `dist/index.html` and `api/index.php` are made by `php cast build`.
+* **The vessel** is `src/vessel/`, the home of every library. `php cast build` takes it per folder: its html, css and js go to the page, its php to the API, always before `src/index.*`. A new library there joins the bundle, no need to list it in `cast`.
 * Put images and fonts in `dist/assets/`. The page reads them as `assets/...`.
 * **The background** is `dist/assets/background.jpg`. Drop your own image there, no rebuild needed.
 
@@ -127,15 +203,25 @@ Locally, `php cast serve` runs `router.php`, which reads the same `vercel.json` 
 | `js` | `--install` `--remove` `--tags` | Install or remove `exura.js`. |
 | `php` | `--install` `--remove` `--tags` | Install or remove `exura.php`. |
 
-* Keep Exura in `src/exura/`: both items bundle it from there.
+* Keep Exura in `src/vessel/` (`EXURA_DIST`): both items bundle it from there.
 * `--tags` is a tag (`1.1.0`) or a branch (`1.x`, the latest of 1.x). Without it, `EXURA_TAGS` is used.
 
 ### vercel
 
-| Cast | Description |
-| ---- | ----------- |
-| `link` | Log in to Vercel. |
-| `push` | Publish to Vercel (`vercel --prod`). |
+| Cast | Spells | Description |
+| ---- | ------ | ----------- |
+| `init` | | Check or install the Vercel CLI. |
+| `code` | | Make `src/vessel/vercel.php` for the API. |
+| `link` | | Link this folder to Vercel (logs in when needed). |
+| `publish` | | Deploy to production. |
+| `env` | `--target` | List and manage environment variables. |
+| `env:add` | `--key` `--value` `--target` | Add a new environment variable. |
+| `env:set` | `--key` `--value` `--target` | Make or change an environment variable. |
+| `env:remove` | `--key` `--target` | Remove an environment variable. |
+| `info` | | Casts, versions, install and project. |
+
+* `--target` is `production`, `preview` or `development`. Without it, `VERCEL_TARGET` is used.
+* `Vercel::env()`, `Vercel::is()`, `Vercel::target()`, `Vercel::url()`, `Vercel::region()` are ready in the API once `src/vessel/vercel.php` is there.
 
 ---
 
@@ -155,7 +241,7 @@ php vercel
 
 ```bash
 php exura setup                                        # asks: where? install now?
-php exura setup --dist=src/exura/ --tags=1.1.0 --install
+php exura setup --dist=src/vessel/ --tags=1.1.0 --install
 ```
 
 **Build and develop** — `serve` and `watch` run until **Ctrl+C**:
@@ -177,17 +263,32 @@ curl "https://<your-app>.vercel.app/api/rune"
 **Ship** — to Vercel:
 
 ```bash
-php vercel link                                        # once: log in
+php vercel init                                        # once: the Vercel CLI
+php vercel link                                        # once: log in and link
 php cast build
-php vercel push                                        # vercel --prod
+php vercel publish                                     # to production
+php vercel info
 ```
 
-**Share** — the runites and their shards as one relic:
+**Environment variables** — read them in the API with `Vercel::env()`:
+
+```bash
+php vercel code                                        # once: src/vessel/vercel.php
+php vercel env
+php vercel env:add --key=GREETING --value=hello
+php vercel env:set --key=GREETING --value=hi --target=preview
+php vercel env:remove --key=GREETING
+```
+
+**Share** — every runite seals its own relic:
 
 ```bash
 php cast store
-php cast reliquary --runite-relic                      # cast -> cast.rune
+php cast reliquary --runite-relic                      # cast   -> cast.rune   (the app)
+php vercel reliquary --runite-relic                    # vercel -> vercel.rune (Vercel only)
 ```
+
+**Built-in casts of Rune** — every runite carries them: `grimoire`, `reliquary` and `sentinel`.
 
 ---
 
@@ -195,11 +296,12 @@ php cast reliquary --runite-relic                      # cast -> cast.rune
 
 | Runite · Cast | Lesson |
 | ------------- | ------ |
-| `cast build` | Crafter: two items from one `src/`, each with its own seed |
+| `cast build` | Crafter: two items from one `src/`, each with its own seed · Forger: one vessel, split by language |
 | `cast serve`, `watch`, `start` | Specter: a dev server with a router, an observer, casts beside the flow |
 | `cast store` | Keeper: shards travel with the relic |
 | `exura setup`, `css`, `js`, `php` | Whisper asks; Forger fetches, writes and removes |
-| `vercel link`, `push` | Specter runs another CLI beside the flow |
+| `vercel init`, `link`, `publish`, `env:*`, `info` | run another CLI, with `Whisper::flash` while it works |
+| two relics | `cast` and `vercel` sealed on their own; `exura` comes from another repo |
 
 **A web app is many files, Rune makes it two, Vercel ships them.**
 
@@ -209,6 +311,7 @@ php cast reliquary --runite-relic                      # cast -> cast.rune
 
 * [Rune](https://github.com/devneet-id/rune) — Application foundation and tooling.
 * [Rune Lore](https://github.com/devneet-id/rune-lore) — The full documentation, from the void to the beyond.
+* [Reliquary](https://github.com/devneet-id/reliquary) — The relics of Rune.
 * [ExuraCSS](https://github.com/devneet-id/exuracss) — Styling framework.
 * [ExuraJS](https://github.com/devneet-id/exurajs) — JavaScript framework.
 * [ExuraPHP](https://github.com/devneet-id/exuraphp) — PHP framework.
